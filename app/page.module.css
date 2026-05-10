@@ -1,0 +1,317 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--gradient-bg);
+  padding: 2rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Navbar */
+.navbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 1.5rem 4rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 100;
+}
+
+.navLogo {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 1.1rem;
+}
+
+.navLinks {
+  display: flex;
+  gap: 2rem;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+
+.navLinks span {
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.navLinks span:hover {
+  color: var(--foreground);
+}
+
+.activeLink {
+  color: var(--primary);
+  font-weight: 600;
+  border-bottom: 2px solid var(--primary);
+  padding-bottom: 4px;
+}
+
+.navUser {
+  font-size: 1.2rem;
+  color: var(--primary);
+  cursor: pointer;
+}
+
+/* Decorative blobs */
+.container::before {
+  content: '';
+  position: absolute;
+  top: -100px;
+  left: -100px;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(242, 208, 224, 0.5) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: float 8s ease-in-out infinite;
+}
+
+.container::after {
+  content: '';
+  position: absolute;
+  bottom: -80px;
+  right: -80px;
+  width: 350px;
+  height: 350px;
+  background: radial-gradient(circle, rgba(200, 230, 212, 0.5) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: float 10s ease-in-out infinite reverse;
+}
+
+.hero {
+  z-index: 10;
+  animation: fadeIn 1.2s ease-out;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.title {
+  font-size: 5.5rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  font-size: 1.15rem;
+  color: var(--text-muted);
+  margin-bottom: 3rem;
+  max-width: 520px;
+  line-height: 1.7;
+}
+
+.startButton {
+  background: var(--gradient-btn);
+  color: white;
+  padding: 1rem 3rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  border-radius: 50px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(124, 108, 174, 0.25);
+}
+
+.startButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(124, 108, 174, 0.35);
+}
+
+.backgroundElement {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 800px;
+  height: 800px;
+  background: radial-gradient(circle, rgba(224, 212, 240, 0.3) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.ornament {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: var(--primary);
+  opacity: 0.6;
+  animation: float 4s ease-in-out infinite;
+}
+
+/* Footer */
+.footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 2rem 4rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(8px);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  z-index: 10;
+}
+
+.footerCenter {
+  display: flex;
+  gap: 2rem;
+}
+
+.footerLeft {
+  font-weight: 700;
+  color: var(--primary);
+}
+
+/* Modal Styles */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(45, 43, 61, 0.3);
+  backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 200;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.modalContent {
+  width: 90%;
+  max-width: 500px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(124, 108, 174, 0.1);
+  border-radius: 24px;
+  padding: 2.5rem 2rem;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(124, 108, 174, 0.15);
+}
+
+.closeButton {
+  position: absolute;
+  top: 1rem;
+  right: 1.5rem;
+  font-size: 1.5rem;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.closeButton:hover {
+  color: var(--foreground);
+}
+
+.modalTitle {
+  font-size: 1.8rem;
+  margin-bottom: 2rem;
+  text-align: center;
+  color: var(--foreground);
+  font-weight: 700;
+}
+
+/* Form Styles inside Modal */
+.formGroup {
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+
+.label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.input, .select {
+  width: 100%;
+  padding: 1rem 1.2rem;
+  background: rgba(248, 246, 255, 0.8);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--foreground);
+  font-size: 1rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  appearance: none;
+}
+
+.select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%237c6cae' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 1.2rem;
+  padding-right: 3rem;
+}
+
+.select option {
+  background: #ffffff;
+  color: var(--foreground);
+  padding: 10px;
+}
+
+.input:focus, .select:focus {
+  border-color: var(--primary);
+  background: rgba(235, 230, 247, 0.3);
+  box-shadow: 0 0 0 4px rgba(124, 108, 174, 0.1);
+  outline: none;
+}
+
+.row {
+  display: flex;
+  gap: 1rem;
+}
+
+.dateRow {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.dateInput {
+  flex: 1;
+  text-align: center;
+}
+
+.submitButton {
+  width: 100%;
+  padding: 1rem;
+  background: var(--gradient-btn);
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border-radius: 12px;
+  margin-top: 1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(124, 108, 174, 0.2);
+}
+
+.submitButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(124, 108, 174, 0.3);
+}
+
+@media (max-width: 768px) {
+  .navbar, .footer {
+    padding: 1rem 2rem;
+  }
+  .navLinks, .footerCenter {
+    display: none;
+  }
+  .title {
+    font-size: 2.5rem;
+  }
+}
