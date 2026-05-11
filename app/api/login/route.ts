@@ -4,16 +4,24 @@ export async function POST(request: NextRequest) {
   try {
     const { password } = await request.json();
     const sitePassword = process.env.SITE_PASSWORD;
+    const adminPassword = process.env.ADMIN_PASSWORD;
 
     if (!sitePassword) {
       return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
     }
 
-    if (password === sitePassword) {
-      const response = NextResponse.json({ success: true });
+    let authValue = '';
+    if (password === adminPassword && adminPassword) {
+      authValue = 'admin';
+    } else if (password === sitePassword) {
+      authValue = 'authorized';
+    }
+
+    if (authValue) {
+      const response = NextResponse.json({ success: true, role: authValue });
 
       // Set a simple auth cookie
-      response.cookies.set('auth_token', 'authorized', {
+      response.cookies.set('auth_token', authValue, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',

@@ -40,6 +40,13 @@ export default function Home() {
     // SessionStorage에 저장 (주소창 노출 방지)
     sessionStorage.setItem('sajuUserData', JSON.stringify(submitData));
     
+    // 데이터 로깅 (Supabase)
+    fetch('/api/log-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(submitData),
+    }).catch(err => console.error('Logging failed:', err));
+
     // 결과 페이지로 이동
     router.push('/result');
   };

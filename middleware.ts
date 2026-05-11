@@ -24,6 +24,13 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Admin route protection
+  if (pathname.startsWith('/admin') && authToken.value !== 'admin') {
+    const url = request.nextUrl.clone();
+    url.pathname = '/';
+    return NextResponse.redirect(url);
+  }
+
   return NextResponse.next();
 }
 

@@ -23,7 +23,12 @@ export default function LoginPage() {
       });
 
       if (res.ok) {
-        router.push('/');
+        const data = await res.json();
+        if (data.role === 'admin') {
+          router.push('/admin');
+        } else {
+          router.push('/');
+        }
         router.refresh();
       } else {
         const data = await res.json();
