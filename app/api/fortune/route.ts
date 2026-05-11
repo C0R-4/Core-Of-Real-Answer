@@ -27,33 +27,108 @@ export async function POST(request: NextRequest) {
       minute = parseInt(parts[1], 10) || 0;
     }
 
-    // 라이브러리 버그 대응: 월주는 month-1, 일주는 month 그대로가 정확
-    // 두 번 호출하여 각각 올바른 결과를 합성
-    const resultForMonth = calculateFourPillars({
-      year, month: month - 1, day, hour, minute, isLunar: isLunarBoolean,
-    });
-    const resultForDay = calculateFourPillars({
-      year, month, day, hour, minute, isLunar: isLunarBoolean,
-    });
+    // 1. 양력 날짜 확정 (절기 계산용)
+    let solarYear = year;
+    let solarMonth = month;
+    let solarDay = day;
 
-    // 합성: 연주(동일), 월주(month-1 결과), 일주(month 결과), 시주(month 결과)
-    const sajuObject = {
-      year: resultForDay.toObject().year,
-      month: resultForMonth.toObject().month,
-      day: resultForDay.toObject().day,
-      hour: resultForDay.toObject().hour,
-    };
-
-    if (!hasTime) {
-      sajuObject.hour = '--';
+    if (isLunarBoolean) {
+      const { lunarToSolar } = require('manseryeok');
+      const solar = lunarToSolar(year, month, day, body.isLeapMonth === 'true' || body.isLeapMonth === true);
+      solarYear = solar.year;
+      solarMonth = solar.month;
+      solarDay = solar.day;
     }
 
-    const sajuString = `${sajuObject.year}연주, ${sajuObject.month}월주, ${sajuObject.day}일주, ${sajuObject.hour}시주`;
+    // 2. 사주 연도 및 월주 계산을 위한 절기 판정
+    // 고정 데이터
+    const HEAVENLY_STEMS = ['갑', '을', '병', '정', '무', '기', '경', '신', '임', '계'];
+    const EARTHLY_BRANCHES = ['자', '축', '인', '묘', '진', '사', '오', '미', '신', '유', '술', '해'];
+    const HEAVENLY_STEMS_HANJA = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
+    const EARTHLY_BRANCHES_HANJA = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+    const SOLAR_TERM_BASE = [
+      5.4055, 20.12, 3.87, 18.73, 5.63, 20.646, 4.81, 20.1, 5.52, 21.04, 5.678, 21.37, 7.108, 22.83,
+      7.5, 23.13, 7.646, 23.042, 8.318, 23.438, 7.438, 22.36, 7.18, 21.94,
+    ];
 
-    // 한자도 합성
-    const hanjaForMonth = resultForMonth.toHanjaObject();
-    const hanjaForDay = resultForDay.toHanjaObject();
-    const hanjaString = `${hanjaForDay.year.hanja}年柱, ${hanjaForMonth.month.hanja}月柱, ${hanjaForDay.day.hanja}日柱, ${hasTime ? hanjaForDay.hour.hanja : '--'}時柱`;
+    const getCorrectedSolarTermDate = (y: number, termIdx: number) => {
+      const base = SOLAR_TERM_BASE[termIdx];
+      const diff = y - 2000;
+      const d = Math.floor(base + 0.2422 * diff - Math.floor(diff / 4));
+      return new Date(y, Math.floor(termIdx / 2), d);
+    };
+
+    const targetDate = new Date(solarYear, solarMonth - 1, solarDay, hour, minute);
+
+    // 입춘(立春) 기준 연주 보정
+    const lichunDate = getCorrectedSolarTermDate(solarYear, 2);
+    let sajuYear = solarYear;
+    if (targetDate < lichunDate) {
+      sajuYear = solarYear - 1;
+    }
+
+    // 3. 사주 계산 (라이브러리 호출 - 일주/시주용)
+    const result = calculateFourPillars({
+      year: solarYear,
+      month: solarMonth,
+      day: solarDay,
+      hour,
+      minute,
+      isLunar: false,
+    });
+
+    const pillars = result.toObject();
+    const hanjas = result.toHanjaObject();
+
+    // 4. 연주(Yeonju) 계산
+    const yStemIdx = (((sajuYear - 4) % 10) + 10) % 10;
+    const yBranchIdx = (((sajuYear - 4) % 12) + 12) % 12;
+    const finalYear = HEAVENLY_STEMS[yStemIdx] + EARTHLY_BRANCHES[yBranchIdx];
+    const finalYearHanja = HEAVENLY_STEMS_HANJA[yStemIdx] + EARTHLY_BRANCHES_HANJA[yBranchIdx];
+
+    // 5. 월주(Wolju) 계산
+    // 현재 날짜 이전에 가장 최근에 온 절기(Jeolgi, 짝수 인덱스) 찾기
+    let latestTermIdx = -1;
+    // 작년 12월 절기(Daeseol, 22)부터 확인
+    const lastYearDaeseol = getCorrectedSolarTermDate(solarYear - 1, 22);
+    const lastYearSohan = getCorrectedSolarTermDate(solarYear, 0); // 올해 1월 소한은 작년 축월의 시작
+
+    if (targetDate >= lastYearDaeseol) latestTermIdx = 22;
+    
+    // 올해의 절기들 확인 (0, 2, 4, ..., 22)
+    for (let i = 0; i <= 22; i += 2) {
+      const termDate = getCorrectedSolarTermDate(solarYear, i);
+      if (targetDate >= termDate) {
+        latestTermIdx = i;
+      } else {
+        break;
+      }
+    }
+
+    // 절기 인덱스에 따른 월지(Wolji) 매핑
+    // 2(입춘)->1(인), 4(경칩)->2(묘), ..., 22(대설)->11(자), 0(소한)->12(축)
+    const solarTermMonth = ((Math.floor(latestTermIdx / 2) + 11) % 12) + 1;
+    
+    // 월간(Month Stem) 계산: (연간%5 * 2 + 월지 + 1) % 10
+    const yearStemMod5 = yStemIdx % 5;
+    const mStemIdx = (yearStemMod5 * 2 + solarTermMonth + 1) % 10;
+    
+    const finalMonth = HEAVENLY_STEMS[mStemIdx] + EARTHLY_BRANCHES[(solarTermMonth + 1) % 12]; // 자(0), 축(1), 인(2)...
+    // EARTHLY_BRANCHES index: 자(0), 축(1), 인(2)... 
+    // solarTermMonth: 인(1)->index 2, 묘(2)->index 3, ..., 자(11)->index 0, 축(12)->index 1
+    const mBranchIdx = (solarTermMonth + 1) % 12;
+    const finalMonthString = HEAVENLY_STEMS[mStemIdx] + EARTHLY_BRANCHES[mBranchIdx];
+    const finalMonthHanja = HEAVENLY_STEMS_HANJA[mStemIdx] + EARTHLY_BRANCHES_HANJA[mBranchIdx];
+
+    const sajuObject = {
+      year: finalYear,
+      month: finalMonthString,
+      day: pillars.day,
+      hour: hasTime ? pillars.hour : '--',
+    };
+
+    const sajuString = `${sajuObject.year}연주, ${sajuObject.month}월주, ${sajuObject.day}일주, ${sajuObject.hour}시주`;
+    const hanjaString = `${finalYearHanja}年柱, ${finalMonthHanja}月柱, ${hanjas.day.hanja}日柱, ${hasTime ? hanjas.hour.hanja : '--'}時柱`;
 
     // Gemini AI 호출
     const model = genAI.getGenerativeModel({ model: MODEL_NAME });

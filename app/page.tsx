@@ -23,7 +23,7 @@ export default function Home() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // 생년월일 조립 및 패딩
@@ -41,7 +41,7 @@ export default function Home() {
     sessionStorage.setItem('sajuUserData', JSON.stringify(submitData));
     
     // 데이터 로깅 (Supabase)
-    fetch('/api/log-data', {
+    await fetch('/api/log-data', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(submitData),
