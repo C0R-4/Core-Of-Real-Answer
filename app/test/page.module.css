@@ -1,0 +1,122 @@
+.container {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 40px;
+  background: var(--card-bg);
+  backdrop-filter: blur(20px);
+  border-radius: 30px;
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  font-family: 'Inter', sans-serif;
+}
+
+.title {
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 30px;
+  background: var(--gradient-text, linear-gradient(135deg, #5c4b8a 0%, #7c6cae 50%, #5ba8a0 100%));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 40px;
+  padding: 20px;
+  background: rgba(124, 108, 174, 0.05);
+  border-radius: 20px;
+}
+
+.inputGroup {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.inputGroup label {
+  min-width: 100px;
+  font-weight: 500;
+  color: var(--primary);
+}
+
+.inputGroup input[type="date"],
+.inputGroup input[type="time"] {
+  padding: 10px 15px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--foreground);
+  font-size: 1rem;
+}
+
+.button {
+  padding: 15px;
+  border-radius: 12px;
+  border: none;
+  background: var(--gradient-btn, linear-gradient(135deg, #7c6cae 0%, #5ba8a0 100%));
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+}
+
+.result {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.pillar {
+  padding: 20px;
+  background: rgba(124, 108, 174, 0.05);
+  border-radius: 15px;
+  text-align: center;
+  border: 1px solid var(--border);
+}
+
+.label {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-bottom: 10px;
+}
+
+.value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.hanja {
+  font-size: 1.2rem;
+  color: var(--primary);
+}
+
+.summary {
+  padding: 20px;
+  background: rgba(124, 108, 174, 0.05);
+  border-radius: 15px;
+  line-height: 1.6;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 600px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

@@ -120,16 +120,18 @@ export default function AdminDashboard() {
               <th style={{ padding: '1rem' }}>생년월일</th>
               <th style={{ padding: '1rem' }}>태어난 시간</th>
               <th style={{ padding: '1rem' }}>구분</th>
+              <th style={{ padding: '1rem' }}>결과 보기</th>
+              <th style={{ padding: '1rem' }}>채팅 내역</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} style={{ padding: '3rem', textAlign: 'center' }}>데이터를 불러오는 중...</td>
+                <td colSpan={8} style={{ padding: '3rem', textAlign: 'center' }}>데이터를 불러오는 중...</td>
               </tr>
             ) : logs.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ padding: '3rem', textAlign: 'center' }}>데이터가 없습니다.</td>
+                <td colSpan={8} style={{ padding: '3rem', textAlign: 'center' }}>데이터가 없습니다.</td>
               </tr>
             ) : logs.map((log) => (
               <tr key={log.id} style={{ borderBottom: '1px solid #f1f2f6', transition: 'background 0.2s' }}>
@@ -150,6 +152,34 @@ export default function AdminDashboard() {
                   }}>
                     {log.is_lunar ? '음력' : '양력'}
                   </span>
+                </td>
+                <td style={{ padding: '1rem' }}>
+                  <a href={`/result?id=${log.id}`} target="_blank" rel="noreferrer" style={{
+                    display: 'inline-block',
+                    padding: '6px 12px',
+                    background: '#74b9ff',
+                    color: '#fff',
+                    borderRadius: '6px',
+                    fontSize: '0.85rem',
+                    fontWeight: '600',
+                    textDecoration: 'none'
+                  }}>
+                    결과
+                  </a>
+                </td>
+                <td style={{ padding: '1rem' }}>
+                  <a href={`/chat?id=${log.id}`} target="_blank" rel="noreferrer" style={{
+                    display: 'inline-block',
+                    padding: '6px 12px',
+                    background: '#a29bfe',
+                    color: '#fff',
+                    borderRadius: '6px',
+                    fontSize: '0.85rem',
+                    fontWeight: '600',
+                    textDecoration: 'none'
+                  }}>
+                    채팅
+                  </a>
                 </td>
               </tr>
             ))}

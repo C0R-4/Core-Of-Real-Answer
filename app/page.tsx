@@ -41,13 +41,24 @@ export default function Home() {
     sessionStorage.setItem('sajuUserData', JSON.stringify(submitData));
     
     // 데이터 로깅 (Supabase)
-    await fetch('/api/log-data', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(submitData),
-    }).catch(err => console.error('Logging failed:', err));
+    try {
+      const logRes = await fetch('/api/log-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(submitData),
+      });
+      const logResult = await logRes.json();
+      
+      if (logResult.id) {
+        // ID가 있으면 해싱된 링크처럼 id 파라미터를 추가하여 이동
+        router.push(`/result?id=${logResult.id}`);
+        return;
+      }
+    } catch (err) {
+      console.error('Logging failed:', err);
+    }
 
-    // 결과 페이지로 이동
+    // 결과 페이지로 이동 (id가 없는 경우)
     router.push('/result');
   };
 

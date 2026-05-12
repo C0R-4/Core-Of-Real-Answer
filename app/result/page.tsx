@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import styles from './page.module.css';
 import { Sparkles, Briefcase, Calendar, MessageCircle, RefreshCw, BookOpen } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -31,43 +31,83 @@ function ResultContent() {
   const [userData, setUserData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const searchParams = useSearchParams();
+  const id = searchParams.get('id');
+
   useEffect(() => {
     const fetchAllChapters = async () => {
       try {
-        const storedData = sessionStorage.getItem('sajuUserData');
-        if (!storedData) {
-          router.push('/');
-          return;
+        let parsedData: any = null;
+        let cachedChapters: any = null;
+        let cachedContext: any = null;
+        let isFromDb = false;
+
+        if (id) {
+          // DB에서 데이터 가져오기
+          const dbRes = await fetch(`/api/get-result?id=${id}`);
+          const dbJson = await dbRes.json();
+          
+          if (dbJson.data) {
+            const logData = dbJson.data;
+            parsedData = {
+              name: logData.name,
+              gender: logData.gender,
+              birthDate: logData.birth_date,
+              birthTime: logData.birth_time,
+              isLunar: logData.is_lunar,
+              year: logData.year,
+              month: logData.month,
+              day: logData.day
+            };
+            setUserData(parsedData);
+
+            if (logData.result_data && Object.keys(logData.result_data).length > 0) {
+              cachedChapters = logData.result_data;
+              cachedContext = logData.saju_context;
+              isFromDb = true;
+            }
+          }
         }
 
-        const parsedData = JSON.parse(storedData);
-        setUserData(parsedData);
+        if (!parsedData) {
+          const storedData = sessionStorage.getItem('sajuUserData');
+          if (!storedData) {
+            router.push('/');
+            return;
+          }
+          parsedData = JSON.parse(storedData);
+          setUserData(parsedData);
+        }
 
-        // 캐시 확인
-        const cachedChaptersStr = sessionStorage.getItem('sajuChapters');
-        const cachedChapters = cachedChaptersStr ? JSON.parse(cachedChaptersStr) : null;
-        
-        // 캐시된 컨텍스트(사주 정보) 확인
-        const cachedContextStr = sessionStorage.getItem('sajuContext');
-        if (cachedContextStr) {
-          setSaju(JSON.parse(cachedContextStr));
+        if (!isFromDb) {
+          const cachedChaptersStr = sessionStorage.getItem('sajuChapters');
+          cachedChapters = cachedChaptersStr ? JSON.parse(cachedChaptersStr) : null;
+          
+          const cachedContextStr = sessionStorage.getItem('sajuContext');
+          if (cachedContextStr) {
+            cachedContext = JSON.parse(cachedContextStr);
+          }
+        }
+
+        if (cachedContext) {
+          setSaju(cachedContext);
         }
 
         if (cachedChapters && Object.keys(cachedChapters).length === 13) {
-           // 모든 챕터가 캐시되어 있으면 바로 로드
            setChapters(cachedChapters);
            setLoading(false);
-           return; // API 호출 생략
+           return;
         }
 
-        // 캐시가 불완전하거나 없으면 있는 것만 먼저 로드
         let currentChapters = cachedChapters || {};
+        let currentSajuContext = cachedContext;
+        
         if (Object.keys(currentChapters).length > 0) {
            setChapters(currentChapters);
            setLoading(false);
         }
 
-        if (!cachedContextStr || !currentChapters[0]) {
+        if (!currentSajuContext || !currentChapters[0]) {
           const initialRes = await fetch('/api/fortune', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -77,30 +117,47 @@ function ResultContent() {
           const initialResult = await initialRes.json();
           if (initialResult.error) throw new Error(initialResult.error);
           
-          setSaju(initialResult.saju);
-          sessionStorage.setItem('sajuContext', JSON.stringify(initialResult.saju));
+          currentSajuContext = initialResult.saju;
+          setSaju(currentSajuContext);
+          sessionStorage.setItem('sajuContext', JSON.stringify(currentSajuContext));
           
           currentChapters = { ...currentChapters, 0: initialResult.content };
           setChapters(prev => ({ ...prev, 0: initialResult.content }));
           sessionStorage.setItem('sajuChapters', JSON.stringify(currentChapters));
           setLoading(false);
+          
+          if (id) {
+            // 초기 챕터 저장
+            await fetch('/api/save-result', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ id, result_data: currentChapters, saju_context: currentSajuContext }),
+            });
+          }
         }
 
         const remainingChapters = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
         for (const ch of remainingChapters) {
           if (!currentChapters[ch]) {
-            fetch('/api/fortune', {
+            await fetch('/api/fortune', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ ...parsedData, chapter: ch }),
             }).then(res => res.json())
-              .then(data => {
+              .then(async data => {
                 if (data.content) {
-                  setChapters(prev => {
-                    const newChapters = { ...prev, [ch]: data.content };
-                    sessionStorage.setItem('sajuChapters', JSON.stringify(newChapters));
-                    return newChapters;
-                  });
+                  currentChapters[ch] = data.content;
+                  setChapters(prev => ({ ...prev, [ch]: data.content }));
+                  sessionStorage.setItem('sajuChapters', JSON.stringify(currentChapters));
+                  
+                  if (id) {
+                    // 점진적으로 DB 업데이트
+                    await fetch('/api/save-result', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ id, result_data: currentChapters, saju_context: currentSajuContext }),
+                    });
+                  }
                 }
               }).catch(err => console.error(`Error fetching chapter ${ch}:`, err));
           }
@@ -114,7 +171,7 @@ function ResultContent() {
     };
 
     fetchAllChapters();
-  }, [router]);
+  }, [router, id]);
 
   const handleDownload = () => {
     if (!userData || !chapters || Object.keys(chapters).length === 0) {
@@ -250,7 +307,7 @@ function ResultContent() {
           <Sparkles size={18} style={{ marginRight: '8px' }} /> 인쇄하기
         </button>
         <button 
-          onClick={() => router.push('/chat')} 
+          onClick={() => router.push(id ? `/chat?id=${id}` : '/chat')} 
           className={`${styles.btn} ${styles.btnPrimary}`}
         >
           <MessageCircle size={18} style={{ marginRight: '8px' }} /> 더 알아보기 (AI 상담)

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, Suspense } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import styles from './page.module.css';
 import { Send, ArrowLeft, User, Bot } from 'lucide-react';
 
@@ -11,6 +11,8 @@ function ChatContent() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const chatWindowRef = useRef<HTMLDivElement>(null);
+  const searchParams = useSearchParams();
+  const id = searchParams.get('id');
   
   // 상태 관리
   const [context, setContext] = useState<any>(null);
@@ -39,13 +41,33 @@ function ChatContent() {
 
     setContext({ user: userContext, saju: sajuInfo });
 
-    setMessages([
-      {
-        role: 'ai',
-        content: `안녕하세요 ${name}님, 사주 풀이 결과를 바탕으로 더 궁금한 점이 있으신가요? 이직 시기, 궁합, 혹은 오늘의 운세에 대해 구체적으로 물어보셔도 좋습니다.`
+    const loadHistory = async () => {
+      let loadedMessages = false;
+      if (id) {
+        try {
+          const res = await fetch(`/api/chat-history?id=${id}`);
+          const data = await res.json();
+          if (data.chat_history && data.chat_history.length > 0) {
+            setMessages(data.chat_history);
+            loadedMessages = true;
+          }
+        } catch (e) {
+          console.error('Failed to load chat history', e);
+        }
       }
-    ]);
-  }, []);
+
+      if (!loadedMessages) {
+        setMessages([
+          {
+            role: 'ai',
+            content: `안녕하세요 ${name}님, 사주 풀이 결과를 바탕으로 더 궁금한 점이 있으신가요? 이직 시기, 궁합, 혹은 오늘의 운세에 대해 구체적으로 물어보셔도 좋습니다.`
+          }
+        ]);
+      }
+    };
+
+    loadHistory();
+  }, [id]);
 
   // 스크롤 하단 고정
   useEffect(() => {
@@ -58,7 +80,8 @@ function ChatContent() {
     if (!input.trim() || loading) return;
 
     const userMessage = { role: 'user', content: input };
-    setMessages(prev => [...prev, userMessage]);
+    const currentMessages = [...messages, userMessage];
+    setMessages(currentMessages);
     setInput('');
     setLoading(true);
 
@@ -67,14 +90,24 @@ function ChatContent() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: [...messages, userMessage],
+          messages: currentMessages,
           context: context || {}
         })
       });
 
       const data = await response.json();
       if (data.content) {
-        setMessages(prev => [...prev, { role: 'ai', content: data.content }]);
+        const newMessages = [...currentMessages, { role: 'ai', content: data.content }];
+        setMessages(newMessages);
+
+        // 대화 기록 저장
+        if (id) {
+          fetch('/api/chat-history', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, chat_history: newMessages })
+          }).catch(e => console.error('Failed to save chat history', e));
+        }
       }
     } catch (error) {
       console.error('Chat error:', error);

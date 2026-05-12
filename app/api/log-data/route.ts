@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
     const data = await request.json();
     console.log('Logging data to Supabase:', data);
     
-    const { error } = await supabase
+    const { data: insertedData, error } = await supabase
       .from('saju_logs')
       .insert([
         {
@@ -19,15 +19,17 @@ export async function POST(request: NextRequest) {
           month: data.month,
           day: data.day
         }
-      ]);
+      ])
+      .select('id')
+      .single();
 
     if (error) {
       console.error('Supabase insert error details:', JSON.stringify(error, null, 2));
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    console.log('Successfully logged data to Supabase');
-    return NextResponse.json({ success: true });
+    console.log('Successfully logged data to Supabase, id:', insertedData?.id);
+    return NextResponse.json({ success: true, id: insertedData?.id });
   } catch (error) {
     console.error('Logging API catch error:', error);
     return NextResponse.json({ error: 'Failed to log data' }, { status: 500 });
